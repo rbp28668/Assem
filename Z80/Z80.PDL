@@ -1,0 +1,355 @@
+proc 'z80'
+
+lsfirst /z80 has reverse byte ordering
+		
+//// sets of z80 registers and flags ////
+set reg8 	{B,C,D,E,H,L,A=7}
+set reg16 	{BC,DE,HL,SP}
+set index	{IX=0DDH,IY=0FDH}
+set cc		{NZ=0,Z=1,NC=2,C=3,P=6,PO=4,PE=5,M=7}
+set rcc		{NZ,Z,NC,C}		/ cond codes for rel jumps 
+set ppr16	{BC,DE,HL,AF}		/ push & pop- able 16 bit regs
+/Note re-ordering of flags in the cc set: Sets are checked from R to L so
+/ that this makes sure that PO and PE are checked before P.
+//// Common 8 bit accumulator addressing modes ////
+plist a.reg8 	'A,',reg8
+plist a.im	'A,',#
+plist a.hl	'A,(HL)'
+plist a.index	'A,(',index,'+',#,')'
+		
+//// useful word to deal with indexed addressing ////
+prodn index 3 pick byte byte byte drop ;
+		
+opcode 'ADC'
+arg a.reg8 -> 088H | byte ;
+arg a.hl -> 08EH byte ;
+arg a.index -> 08EH index ;
+arg a.im -> 0CEH byte byte ;
+arg 'HL,',reg16 -> 0EDH byte 4 << 04AH | byte;
+end
+		
+opcode 'ADD'
+arg a.hl -> 086H byte;
+arg a.index -> 086H index;
+arg a.reg8 -> 80H | byte ;
+arg a.im -> 0C6H byte byte ;
+arg 'HL,',reg16 -> 4<< 09H | byte ;
+arg 'IX,IX' -> 0DDH byte 029H byte;
+arg 'IY,IY' -> 0FDH byte 029H byte;
+arg index,',',reg16 -> swap byte 4 << 09H | byte;
+end
+		
+opcode 'AND'
+arg a.reg8 -> 0A0H | byte ;
+arg a.hl -> 0A6H byte ;
+arg a.index -> 0A6H index ;
+arg a.im -> 0E6H byte byte ;
+end
+		
+opcode 'BIT'
+arg #,',(HL)' -> 0CBH byte 7 & 3 << 46H | byte ;
+arg #,',(',index,'+',#,')' -> swap byte 0CBH byte byte 7 & 3 << 46H | byte ;
+arg #,',',reg8 -> 0CBH byte swap 7 & 3 << | 40H | byte ;
+end
+		
+opcode 'CALL'
+arg cc,',',# -> swap 3 << 0c4H | byte abs16 ;
+arg # -> 0CDH byte abs16 ;
+end
+		
+opcode 'CCF'
+nul -> 03FH byte ;
+		
+opcode 'CPDR'
+nul -> 0EDH byte 0B9H byte ;
+		
+opcode 'CPD'
+nul -> 0EDH byte 0A9H byte ;
+		
+opcode 'CPIR'
+nul -> 0EDH byte 0B1H byte;
+		
+opcode 'CPI'
+nul -> 0EDH byte 0A1H byte ;
+		
+opcode 'CPL'
+nul -> 2FH byte ;
+
+opcode 'CP'
+arg a.reg8 -> 0B8H | byte ;
+arg a.hl -> 0BEH byte ;
+arg a.index -> 0BEH index ;
+arg a.im -> 0FEH byte byte ;
+end
+				
+opcode 'DAA'
+nul -> 27H byte ;
+		
+opcode 'DEC'
+arg reg16 -> 4 << 0BH | byte ;
+arg reg8 -> 3 << 05H | byte ;
+arg '(HL)' -> 35H byte;
+arg '(',index,'+',#,')' -> swap byte 35H byte byte ;
+arg index -> byte 02BH byte ;
+end
+		
+opcode 'DI'
+nul -> 0F3H byte ;
+	
+opcode 'DJNZ'
+arg # -> 10H byte rel8 ;
+end
+		
+opcode 'EI'
+nul -> 0FBH byte ;
+	
+opcode 'EXX'
+nul -> 0D9H byte ;
+	
+opcode 'EX'
+arg 'AF,AF' -> 08H byte;
+arg 'DE,HL' ->0EBH byte;
+arg '(SP),HL' -> 0E3H byte ;
+arg '(SP),',index -> byte 0E3H byte;
+end
+	
+opcode 'HALT'
+nul -> 076H byte ;
+	
+opcode 'IM'
+arg '0' ->0EDH byte 046H byte;
+arg '1' ->0EDH byte 056H byte;
+arg '2' ->0EDH byte 05EH byte;
+end
+	
+opcode 'INC'
+arg reg16 -> 4 << 03H | byte ;
+arg reg8 -> 3 << 04H | byte ;
+arg '(HL)' -> 34H byte;
+arg '(',index,'+',#,')' -> swap byte 34H byte byte ;
+arg index -> byte 023H byte ;
+end
+	
+opcode 'INDR'
+nul -> 0EDH byte 0BAH byte;
+	
+opcode 'IND'
+nul -> 0EDH byte 0AAH byte;
+	
+opcode 'INIR'
+nul -> 0EDH byte 0b2H byte;
+	
+opcode 'INI'
+nul -> 0EDH byte 0A2H byte;
+	
+opcode 'IN'
+arg reg8,',(C)' -> 0EDH byte 3 << 040H | byte ;
+arg 'A,',# -> 0DBH byte byte;
+end
+	
+opcode 'JP'
+arg cc,',',# -> swap 3 << 0c2H | byte abs16 ;
+arg '(HL)' -> 0E9H byte;
+arg '(',index,')' -> byte 0E9H byte;
+arg # -> 0c3H byte abs16;
+end
+	
+opcode 'JR'
+arg rcc,',',# -> swap 3 << 20H | byte rel8 ;
+arg # -> 18H byte rel8;
+end
+
+opcode 'LDDR'
+nul -> 0EDH byte 0B8H byte;
+
+opcode 'LDD'
+nul ->0EDH byte 0A8H byte;
+	
+opcode 'LDIR'
+nul -> 0EDH byte 0B0H byte;
+
+opcode 'LDI'
+nul -> 0EDH byte 0A0H byte;
+
+opcode 'LD'
+arg 'HL,(',#,')' -> 2AH byte abs16;
+arg 'SP,HL' -> 0F9H byte;
+arg 'SP,',index -> byte 0F9H byte;
+arg reg16,',(',#,')' -> 0EDH byte swap 4 << 4BH | byte abs16;
+arg reg16,',',# -> swap 4 << 01H | byte abs16;
+arg 'A,(BC)' -> 0AH byte;
+arg 'A,(DE)' -> 1AH byte;
+arg 'A,I' -> 0EDH byte 057H byte;
+arg 'A,R' -> 0EDH byte 05FH byte;
+arg reg8,',',reg8 -> swap 3 << | 40H | byte ;
+arg reg8,',(HL)' -> 3 << 46H | byte;
+arg reg8,',(',index,'+',#,')' -> swap byte swap 3 << 46H | byte byte;
+arg 'A,(',#,')'-> 3AH byte abs16;
+arg reg8,',',# -> swap 3 << 06H | byte byte;
+arg '(BC),A' -> 02H byte;
+arg '(DE),A' -> 12H byte;
+arg '(HL),',reg8 -> 70H | byte;
+arg '(HL),',# -> 036H byte byte;
+arg '(',index,'+',#,'),',reg8 -> 3 pick byte 70H | byte byte drop ;
+arg '(',index,'+',#,'),',# -> 3 pick byte 36H byte swap byte byte drop;
+arg '(',#,'),HL' -> 22H byte abs16;
+arg '(',#,'),',reg16 -> 0EDH byte 4 << 43H | byte abs16;
+arg '(',#,'),',index -> byte 22H byte abs16;
+arg '(',#,'),A' -> 32H byte abs16;
+arg index,',(',#,')' -> swap byte 2AH byte abs16;
+arg index,',',# -> swap byte 21H byte abs16;
+arg 'R,A' -> 0EDH byte 04FH byte;
+arg 'I,A' -> 0EDH byte 047H byte;
+end
+
+opcode 'NEG'
+nul -> 0EDH byte 44H byte;
+
+opcode 'NOP'
+nul -> 00H byte;
+
+opcode 'OR'
+arg a.reg8 -> 0B0H | byte ;
+arg a.hl -> 0B6H byte ;
+arg a.index -> 0B6H index ;
+arg a.im -> 0F6H byte byte ;
+end
+
+opcode 'OTDR'
+nul -> 0EDH byte 0BBH byte;
+
+opcode 'OTIR'
+nul -> 0EDH byte 0B3H byte;
+
+opcode 'OUTD'
+nul -> 0EDH byte 0ABH byte;
+
+opcode 'OUTI'
+nul -> 0EDH byte 0A3H byte;
+
+opcode 'OUT'
+arg '(C),',reg8 -> 0EDH byte 3 << 41H | byte;
+arg '(',#,'),A' -> 0D3H byte byte;
+end
+
+opcode 'POP'
+arg ppr16 -> 4 << 0C1H | byte;
+arg index -> byte 0E1H byte;
+end
+
+opcode 'PUSH'
+arg ppr16 -> 4 << 0C5H | byte;
+arg index -> byte 0E5H byte;
+end
+
+opcode 'RES'
+arg #,',(HL)' -> 0CBH byte 7 & 3 << 86H | byte ;
+arg #,',(',index,'+',#,')' -> swap byte 0CBH byte byte 7 & 3 << 86H | byte ;
+arg #,',',reg8 -> 0CBH byte swap 7 & 3 << | 80H | byte ;
+end
+
+opcode 'RETI'
+nul -> 0EDH byte 4DH byte;
+
+opcode 'RETN'
+nul -> 0EDH byte 45H byte;
+
+opcode 'RET'
+arg cc -> 3 << 0C0H | byte;
+arg '' ->0C9H byte;
+end
+
+opcode 'RLA'
+nul -> 17H byte;
+
+opcode 'RLCA'
+nul -> 07H byte;
+
+opcode 'RLC' 
+arg reg8 -> 0CBH byte 00H | byte;
+arg '(HL)' -> 0CBH byte 06H byte;
+arg '(',index,'+',#,')' -> swap byte 0CBH byte byte 06H byte;
+end
+
+opcode 'RLD'
+nul -> 0EDH byte 06FH byte;
+
+opcode 'RL'
+arg reg8 -> 0CBH byte 10H | byte;
+arg '(HL)' -> 0CBH byte 16H byte;
+arg '(',index,'+',#,')' -> swap byte 0CBH byte byte 16H byte;
+end
+
+opcode 'RRA'
+nul -> 1FH byte;
+
+opcode 'RLCA'
+nul -> 0FH byte;
+
+opcode 'RRC' 
+arg reg8 -> 0CBH byte 08H | byte;
+arg '(HL)' -> 0CBH byte 0EH byte;
+arg '(',index,'+',#,')' -> swap byte 0CBH byte byte 0EH byte;
+end
+
+opcode 'RRD'
+nul -> 0EDH byte 067H byte;
+
+opcode 'RR'
+arg reg8 -> 0CBH byte 18H | byte;
+arg '(HL)' -> 0CBH byte 1EH byte;
+arg '(',index,'+',#,')' -> swap byte 0CBH byte byte 1EH byte;
+end
+
+opcode 'RST'
+arg # -> 038 & 0C7H | byte;
+end
+
+opcode 'SBC'
+arg a.reg8 -> 098H | byte ;
+arg a.hl -> 09EH byte ;
+arg a.index -> 09EH index ;
+arg a.im -> 0DEH byte byte ;
+arg 'HL,',reg16 -> 0EDH byte 4 << 042H | byte;
+end
+
+opcode 'SCF'
+nul -> 37H byte;
+
+opcode 'SET'
+arg #,',(HL)' -> 0CBH byte 7 & 3 << 0C6H | byte ;
+arg #,',(',index,'+',#,')' -> swap byte 0CBH byte byte 7 & 3 << 0C6H | byte ;
+arg #,',',reg8 -> 0CBH byte swap 7 & 3 << | 0C0H | byte ;
+end
+
+opcode 'SLA'
+arg reg8 -> 0CBH byte 20H | byte;
+arg '(HL)' -> 0CBH byte 26H byte;
+arg '(',index,'+',#,')' -> swap byte 0CBH byte byte 26H byte;
+end
+
+opcode 'SRA'
+arg reg8 -> 0CBH byte 28H | byte;
+arg '(HL)' -> 0CBH byte 2EH byte;
+arg '(',index,'+',#,')' -> swap byte 0CBH byte byte 2EH byte;
+end
+
+opcode 'SRL'
+arg reg8 -> 0CBH byte 38H | byte;
+arg '(HL)' -> 0CBH byte 3EH byte;
+arg '(',index,'+',#,')' -> swap byte 0CBH byte byte 3EH byte;
+end
+
+opcode 'SUB'
+arg a.reg8 -> 090H | byte ;
+arg a.hl -> 096H byte ;
+arg a.index -> 096H index ;
+arg a.im -> 0D6H byte byte ;
+end
+
+opcode 'XOR'
+arg a.reg8 -> 0A8H | byte ;
+arg a.hl -> 0AEH byte ;
+arg a.index -> 0AEH index ;
+arg a.im -> 0EEH byte byte ;
+end

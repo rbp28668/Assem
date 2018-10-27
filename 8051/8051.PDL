@@ -1,0 +1,332 @@
+/ PDL file for 8051 microprocessor
+
+proc '8051'
+
+msfirst
+
+set 	Rn 	{R0,R1,R2,R3,R4,R5,R6,R7}
+set	Ri	{R0,R1}
+
+plist 	a.rn	'A,',Rn
+plist 	a.dir	'A,',#
+plist	a.ri	'A,@',Ri
+plist	a.im	'A,#',#
+
+plist	dir.a	#,',A'	
+plist	b.rel	#,',',#
+
+
+opcode 'ACALL'			/ Absolute Call (in 2k page)
+arg # -> dup 700H & 3 >> 11H | byte 0FFH & byte;
+end
+
+opcode 'AJMP'			/ Absolute Jump (in 2k page)
+arg # -> dup 700H & 3 >> 01H | byte 0FFH & byte;
+end
+
+opcode 'ADDC'			/ Add with Carry
+arg a.rn -> 38H | byte;
+arg a.ri -> 36H | byte;
+arg a.im -> 34H byte byte;
+arg a.dir -> 35H byte byte;
+end
+
+opcode 'ADD'			/ Add
+arg a.rn -> 28H | byte;
+arg a.ri -> 26H | byte;
+arg a.im -> 24H byte byte;
+arg a.dir -> 25H byte byte;
+end
+
+opcode 'ANL'			/ Logical And
+arg a.rn -> 58H | byte;
+arg a.ri -> 56H | byte;
+arg a.im -> 54H byte byte;
+arg a.dir -> 55H byte byte;
+arg 'C,/',# -> 0B0H byte byte;
+arg 'C,',# -> 82H byte byte;
+arg dir.a -> 52H byte byte;
+arg #,',#',# -> 53H byte swap byte byte;
+end
+
+opcode 'CJNE'			/ Compare and Jump if Not Equal
+arg 'A,#',#,',',# -> 0B4H byte swap byte rel8;
+arg 'A,',#,',',# -> 0B5H byte swap byte rel8;
+arg Rn,',#',#,',',# -> 3 pick 0B8H | byte swap byte rel8 drop;
+arg '@',Ri,',#',#,',',# -> 3 pick 0B6H | byte swap byte rel8 drop;
+end
+
+opcode 'CLR'			/ Clear
+arg 'A' -> 0E4H byte;
+arg 'C' -> 0C3H byte;
+arg # -> 0C2H byte byte;
+end
+
+opcode 'CPL'			/ Complement
+arg 'A' -> 0F4H byte;
+arg 'C' -> 0B3H byte;
+arg # -> 0B2H byte byte;
+end
+
+opcode 'DA'			/ Decimal Adjust
+arg 'A' -> 0D4H byte;
+end
+
+opcode 'DEC'			/ Decrement
+arg 'A' -> 14H byte;
+arg Rn -> 18H | byte;
+arg '@',Ri -> 16H | byte;
+arg # -> 15H byte byte;
+end
+
+opcode 'DIV'			/ Divide
+arg 'AB' -> 84H byte;
+end
+
+opcode 'DJNZ'			/ Decrement and Jump if Not Zero
+arg Rn,',',# -> swap 0D8H | byte rel8;
+arg #,',',# -> 0D5H byte swap byte rel8;
+end
+
+opcode 'INC'			/ Increment
+arg 'A' -> 04H byte;
+arg Rn -> 08H | byte;
+arg '@',Ri -> 06H | byte;
+arg 'DPTR' -> 0C3H byte; 
+arg # -> 05H byte byte;
+end
+
+opcode 'JBC'			/ Jump if Bit is set and Clear bit
+arg b.rel -> 10H byte swap byte rel8;
+end
+
+opcode 'JB'			/ Jump if Bit is set
+arg b.rel -> 20H byte swap byte rel8;
+end
+
+opcode 'JC'			/ Jump if Carry is set
+arg # -> 40H byte rel8;
+end
+
+opcode 'JMP'			/ Jump indirect
+arg '@A+DPTR' -> 73H byte;
+end
+
+opcode 'JNB'			/ Jump if bit not set
+arg b.rel -> 30H byte swap byte rel8;
+end
+
+opcode 'JNC'			/ Jump if carry not set
+arg # -> 50H byte rel8;
+end
+
+opcode 'JNZ'			/ Jump if accumulator Not Zero
+arg # -> 70H byte rel8;
+end
+
+opcode 'JZ'			/ Jump if accumulator Zero
+arg # -> 60H byte rel8;
+end
+
+opcode 'LCALL'			/ Long call
+arg # -> 12H byte abs16;
+end
+
+opcode 'LJMP'			/ Long Jump
+arg # -> 02H byte abs16;
+end
+
+opcode 'MOVC'			/ Move Code byte
+arg 'A,@A+DPTR' -> 93H byte;
+arg 'A,@A+PC' -> 83H byte;
+end
+
+opcode 'MOVX'			/ Move external byte
+arg a.ri -> 0E2H | byte;
+arg 'A,@DPTR' -> 0E0H byte;
+arg '@',Ri,',A' -> 0F2H | byte;
+arg '@DPTR,A' -> 0F0H byte;
+end
+
+opcode 'MOV'			/ Move byte
+arg a.rn -> 0E8H | byte;
+arg a.ri -> 0E6H | byte;
+arg a.im -> 0E4H byte byte;
+arg a.dir -> 0E5H byte byte;
+arg Rn,',A' -> 0F8H | byte;
+arg Rn,',#',# -> swap 78H | byte byte;
+arg Rn,',',# -> swap 0A8H | byte byte;
+arg 'DPTR,#',# -> 90H byte abs16;	/16 bit load
+arg '@',Ri,',A' -> 0F6H | byte;
+arg '@',Ri,',#',# -> swap 76H | byte byte;
+arg '@',Ri,',',# -> swap 0A6H | byte byte;
+arg 'C,',# -> 0A2H byte byte;		/ Move bit
+arg #,',C' -> 92H byte byte;		/ Move bit
+arg dir.a -> 0F5H byte byte;
+arg #,',',Rn -> 88H | byte byte;
+arg #,',@',Ri -> 86H | byte byte;
+arg #,',#',# -> 75H byte swap byte byte;
+arg #,',',# -> 85H byte byte byte;
+end
+
+opcode 'MUL'			/ Multiply
+arg 'AB'-> 0A4H byte;
+end
+
+opcode 'NOP'			/ No Operation
+nul -> 00H byte;
+
+opcode 'ORL'			/ Logical Or
+arg a.rn -> 48H | byte;
+arg a.ri -> 46H | byte;
+arg a.im -> 44H byte byte;
+arg a.dir -> 45H byte byte;
+arg 'C,/',# -> 0A0H byte byte;
+arg 'C,',# -> 72H byte byte;
+arg dir.a -> 42H byte byte;
+arg #,',#',# -> 43H byte swap byte byte;
+end
+
+opcode 'POP'			/ Pop from stack
+arg # -> 0D0H byte byte;
+end
+
+opcode 'PUSH'			/ Push onto stack
+arg # -> 0C0H byte byte;
+end
+
+opcode 'RETI'			/ Return from interrupt
+nul -> 32H byte;
+
+opcode 'RET'			/ Return from subroutine
+nul -> 22H byte;
+
+opcode 'RLC'			/ Rotate Left (acc) thro' Carry
+arg 'A' -> 33H byte;
+end
+
+opcode 'RL'			/ Rotate Left (acc)
+arg 'A' -> 23H byte;
+end
+
+opcode 'RRC'			/ Rotate Right (acc) thro' Carry
+arg 'A' -> 13H byte;
+end
+
+opcode 'RR'			/ Rotate Right (acc)
+arg 'A' -> 03H byte;
+end
+
+opcode 'SETB'			/ Set bit
+arg 'C' -> 0D3H byte;
+arg # -> 0D2H byte byte;
+end
+
+opcode 'SJMP'			/ Short Jump
+arg # -> 80H byte rel8;
+end
+
+opcode 'SUBB'			/ Subtract with Borrow
+arg a.rn -> 98H | byte;
+arg a.ri -> 96H | byte;
+arg a.im -> 94H byte byte;
+arg a.dir -> 95H byte byte;
+end
+
+opcode 'SWAP'			/ Swap accumulator nibbles
+arg 'A' -> 0C4H byte;
+end
+
+opcode 'XCHD'			/ Exchange digit
+arg 'A,@',Ri -> 0D6H | byte;
+end
+
+opcode 'XCH'			/ Exchange acc with ?
+arg a.rn -> 0C8H | byte;
+arg a.ri -> 0C6H | byte;
+arg a.dir -> 0C5H byte byte;
+end
+
+opcode 'XRL'			/ Logical exclusive or
+arg a.rn -> 68H | byte;
+arg a.ri -> 66H | byte;
+arg a.im -> 64H byte byte;
+arg a.dir -> 65H byte byte;
+arg dir.a -> 62H byte byte;
+arg #,',#',# -> 63H byte swap byte byte;
+end
+
+/ Equates for 8051 microprocessor to name SFRs and bit addresses.
+
+	
+/ 8051 Special Function Registers (SFRs)
+equ	ACC		0E0H	/Accumulator
+equ	B		0F0H	/Multiplication Register
+equ	DPH		083H	/Data Pointer (High byte)
+equ	DPL		082H	/Data Pointer (Low byte)
+equ	IE		0A8H	/Interrupt Enable
+equ	IP		0B8H	/Interrupt Priority
+equ	P0		080H	/Port 0
+equ	P1		090H	/Port 1
+equ	P2		0A0H	/Port 2
+equ	P3		0B0H	/Port 3
+equ	PSW		0D0H	/Program Status Word
+equ	SBUF	099H	/Serial Port Buffer
+equ	SCON	098H	/Serial Port Controller
+equ	SP		081H	/Stack Pointer
+equ	TCON	088H	/Timer Control
+equ	TH0		08CH	/Timer 0 (high byte)
+equ	TH1		08DH	/Timer 1 (high byte)
+equ	TL0		08AH	/Timer 0 (low byte)
+equ	TL1		08BH	/Timer 1 (low byte)
+equ	TMOD	089H	/Timer Mode
+
+/Named bit positions
+equ CY		0D7H	/PSW.7	Carry Flag
+equ AC		0D6H	/PSW.6	Auxiliary Carry Flag
+equ F0		0D5H	/PSW.5	Flag 0 (user definable)
+equ RS1		0D4H	/PSW.4	Register bank select bit 1
+equ RS0		0D3H	/PSW.3	Register bank select bit 0
+equ OV		0D2H	/PSW.2	Overflow flag
+equ P		0D0H	/PSW.0	Parity flag
+
+equ TF1		08FH	/TCON.7	Timer 1 Overflow Flag	
+equ TR1		08EH	/TCON.6	Timer 1 Run Control Bit
+equ TF0		08DH	/TCON.5	Timer 0 Overflow Flag
+equ TR0		08CH	/TCON.4	Timer 0 Run Control Bit
+equ IE1		08BH	/TCON.3	Interrupt 1 Edge Flag
+equ IT1		08AH	/TCON.2	Interrupt 1 Type Control Bit
+equ IE0		089H	/TCON.1	Interrupt 0 Edge Flag
+equ IT0		088H	/TCON.0	Interrupt 0 Type Control Bit
+
+equ SM0		09FH	/SCON.7	Serial Mode Control Bit 0
+equ SM1		09EH	/SCON.6	Serial Mode Control Bit 1
+equ SM2		09DH	/SCON.5	Serial Mode Control Bit 2
+equ REN		09CH	/SCON.4	Receiver Enable
+equ TB8		09BH	/SCON.3	Transmit Bit 8
+equ RB8		09AH	/SCON.2	Receive Bit 8
+equ TI		099H	/SCON.1	Transmit Interrupt Flag
+equ RI		098H	/SCON.0	Receive Interrupt Flag
+
+equ EA		0AFH	/IE.7	Enable All Interrupts
+equ ES		0ACH	/IE.4	Enable Serial Port Interrupt
+equ ET1		0ABH	/IE.3	Enable Timer 1 Interrupt
+equ EX1		0AAH	/IE.2	Enable External Interrupt 1
+equ ET0		0A9H	/IE.1	Enable Timer 0 Interrupt
+equ EX0		0A8H	/IE.0	Enable External Interrupt 0
+
+equ RD		0B7H	/P3.7	Read data for External Memory
+equ WR		0B6H	/P3.6	Write Data for External Memory
+equ T1		0B5H	/P3.5	Timer/Counter 1 External Flag
+equ T0		0B4H	/P3.4	Timer/Counter 0 External Flag
+equ INT1	0B3H	/P3.3	Interrupt 1 Input Pin
+equ INT0	0B2H	/P3.2	Interrupt 0 Input Pin
+equ TXD		0B1H	/P3.1	Serial Port Transmit Pin
+equ RXD		0B0H	/P3.0	Serial Port Receive Pin
+
+equ PS		0BCH	/IP.4	Priority of Serial Port Interrupt
+equ PT1		0BBH	/IP.3	Priority of Timer 1 Interrupt
+equ PX1		0BAH	/IP.2	Priority of External Interrupt 1
+equ PT0		0B9H	/IP.1	Priority of Timer 0 Interrupt
+equ PX0		0B8H	/IP.0	Priority of External Interrupt 0
+

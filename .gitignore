@@ -1,0 +1,16 @@
+*.obj
+
+*.idb
+*.pdb
+*.001
+*.DSK
+*.ncb
+*.opt
+*.plg
+*.scc
+
+
+Alink__/
+Backups/
+Debug/
+Release/

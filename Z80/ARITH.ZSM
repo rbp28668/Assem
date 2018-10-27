@@ -1,0 +1,72 @@
+
+;=======================================================================
+;= This module is intended to be a system independent collection of 
+;= arithmetic routines.
+;= ROUTINES:		UDIV16	This divides HL by DE (unsigned and returns
+;=				quotient in HL, Remainder in DE.
+;=			MUL16	Multiplies HL by DE and returns product
+;=				(16 bit) in HL.
+;= Other Files:	NONE
+;=======================================================================
+
+		Code
+		Public	UDIV16
+		Public	MUL16
+
+;***** ROUTINE UDIV16 divides HL by DE (unsigned) and returns quotient
+;***** in HL and remainder in DE.
+		module	UDIV16
+		PUSH	AF
+		PUSH	BC
+		LD	C,L	
+		LD	A,H
+		LD	HL,0
+		LD	B,16
+		OR	A,A
+DVLOOP:		RL	C
+		RLA
+		RL	L
+		RL	H
+		PUSH	HL
+		SBC	HL,DE
+		CCF
+		JR	C,DROP
+		EX	(SP),HL
+DROP:		INC	SP
+		INC	SP
+		DJNZ	DVLOOP
+		EX	DE,HL
+		RL	C
+		LD	L,C
+		RLA
+		LD	H,A
+		POP	BC
+		POP	AF
+		RET
+		endmod
+
+;**** MUL16	HL=HL*DE
+		module	MUL16
+		PUSH	BC
+		PUSH	DE
+		CALL	M..16
+		POP	DE
+		POP	BC
+		RET
+
+M..16:		LD	C,L
+		LD	B,H
+		LD	HL,0
+		LD	A,15
+M..LP:		SLA	E
+		RL	D
+		JR	NC,M..LP1
+		ADD	HL,BC
+M..LP1:		ADD	HL,HL
+		DEC	A
+		JR	NZ,M..LP
+		OR	A,D
+		RET	P
+		ADD	HL,BC
+		RET
+		endmod
